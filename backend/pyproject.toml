@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "sentinel-soc-backend"
 version = "0.1.0"
 description = "SENTINEL SOC - security monitoring, threat detection and incident response platform (backend)"
-readme = "../README.md"
 license = "MIT"
 requires-python = ">=3.12"
 # Exact pins: versions verified at install time (2026-11-16) and covered by the test-suite.
