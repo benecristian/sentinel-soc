@@ -1,0 +1,13 @@
+# SENTINEL SOC — Threat Model (STRIDE)
+
+A SIEM / SOC platform ingests data that is **directly controlled by external adversaries** (HTTP paths, User-Agent headers, SSH usernames, DNS query names). If the SOC platform itself mishandles that input, an attacker probing a monitored server can compromise the SOC console or its analysts.
+
+| STRIDE Category | Threat Scenario | Mitigation in SENTINEL SOC |
+|---|---|---|
+| **Spoofing** | Attacker brute-forces analyst login or enumerates valid usernames via response timing. | Argon2id password hashing; constant-work dummy verification when a username is missing; generic error message (`Invalid username or password`); per-IP and per-username rate limiting on `/api/v1/auth/login`. |
+| **Spoofing / CSRF** | Malicious third-party page tricks a logged-in analyst's browser into closing alerts or changing rule thresholds. | `HttpOnly`, `SameSite=Strict` session cookie plus mandatory `X-Requested-With: SentinelSOC` header verified by `csrf_protect` dependency on all non-GET requests. |
+| **Tampering / SQLi** | Attacker crafts a log line or analyst search filter containing SQL syntax (`' OR 1=1 --`). | 100% SQLAlchemy ORM bound parameters; CIDR inputs validated via `ipaddress.ip_network`; JSONB field queries restricted to `ALLOWED_JSON_FIELDS` allow-list; `ILIKE` wildcards escaped. |
+| **Information Disclosure / XSS** | Attacker sends an HTTP request with `User-Agent: <script>fetch(...)</script>` hoping it executes in the analyst's browser or PDF viewer. | React text rendering only (no `dangerouslySetInnerHTML`); strict `Content-Security-Policy`; XML escaping (`xml.sax.saxutils.escape`) on every field prior to ReportLab PDF generation. |
+| **Repudiation** | Analyst closes critical alerts without explanation or modifies detection thresholds without a trail. | Server-side state machine requires an `InvestigationNote` before transitioning an alert to `resolved` or `false_positive`; all state changes, logins, and rule edits write to `audit_logs` and `incident_timeline`. |
+| **Denial of Service** | Attacker or user uploads a multi-gigabyte file, binary file, or pathological regex input. | Streaming upload size check (`MAX_UPLOAD_MB`), NUL-byte rejection, strict UTF-8 check, line-count (`MAX_LINES_PER_UPLOAD`) and line-length (`MAX_LINE_LENGTH`) caps, bounded regexes on length-capped strings. |
+| **Elevation of Privilege** | Read-only `viewer` or `analyst` attempts to disable detection rules or add allowlist CIDRs; or container escape. | `require_role(UserRole.ADMIN)` enforced on `PATCH /detections/rules/{id}`; containers run as non-root (`UID 10001` / `UID 101`) with `cap_drop: [ALL]` and `no-new-privileges:true`. |

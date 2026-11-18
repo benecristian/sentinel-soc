@@ -1,0 +1,5 @@
+# SYNTHETIC SAMPLE LOG FILE — Nginx Combined Access Log (RFC 5737 test IPs only)
+10.0.2.15 - alice [16/Nov/2026:09:10:01 +0000] "GET /dashboard HTTP/1.1" 200 2310 "-" "Mozilla/5.0"
+203.0.113.88 - - [16/Nov/2026:09:11:05 +0000] "GET /.env HTTP/1.1" 404 153 "-" "Mozilla/5.0 (compatible; Nuclei)"
+203.0.113.88 - - [16/Nov/2026:09:11:07 +0000] "GET /.git/config HTTP/1.1" 403 153 "-" "Nikto/2.5.0"
+203.0.113.88 - - [16/Nov/2026:09:11:09 +0000] "GET /download?file=..%2f..%2fetc/passwd HTTP/1.1" 200 1842 "-" "sqlmap/1.8"

@@ -1,0 +1,116 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-soc-backend"
+version = "0.1.0"
+description = "SENTINEL SOC - security monitoring, threat detection and incident response platform (backend)"
+readme = "../README.md"
+license = "MIT"
+requires-python = ">=3.12"
+# Exact pins: versions verified at install time (2026-11-16) and covered by the test-suite.
+dependencies = [
+    "fastapi==0.163.1",
+    "starlette==1.10.0",
+    "uvicorn[standard]==0.54.0",
+    "pydantic==2.14.3",
+    "pydantic-settings==2.16.3",
+    "SQLAlchemy==2.1.8",
+    "alembic==1.20.1",
+    "psycopg[binary]==3.3.9",
+    "structlog==26.1.0",
+    "argon2-cffi==25.1.0",
+    "PyJWT==2.15.1",
+    "python-multipart==0.0.34",
+    "reportlab==5.1.0",
+    "tldextract==5.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.2.0",
+    "pytest-cov==7.1.0",
+    "httpx==0.28.1",
+    "ruff==0.17.5",
+    "mypy==2.4.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+# --------------------------------------------------------------------------
+# Ruff: linting + formatting (replaces flake8, isort, black, bandit-lite)
+# --------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "S",        # flake8-bandit (security)
+    "SIM",      # simplify
+    "C4",       # comprehensions
+    "N",        # naming
+    "RUF",      # ruff-specific
+    "DTZ",      # timezone-aware datetimes
+    "PT",       # pytest style
+]
+ignore = [
+    "B008",   # FastAPI's Depends() in defaults is idiomatic
+    "E501",   # Handled by `ruff format` (avoids flagging long prose strings in rule descriptions)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S311"]  # asserts, test passwords, non-crypto random
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body"]
+
+# --------------------------------------------------------------------------
+# Mypy
+# --------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+warn_unreachable = true
+exclude = ["alembic/versions/"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = ["reportlab.*", "tldextract.*"]
+ignore_missing_imports = true
+
+# --------------------------------------------------------------------------
+# Pytest
+# --------------------------------------------------------------------------
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "db: test requires a running PostgreSQL database (TEST_DATABASE_URL)",
+]
+filterwarnings = [
+    "error::DeprecationWarning:app.*",
+    "ignore::DeprecationWarning:fastapi.testclient",
+]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
